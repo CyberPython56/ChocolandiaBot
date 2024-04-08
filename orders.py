@@ -56,3 +56,10 @@ async def save_order(id_user):
                 f"""INSERT INTO orders(id_user, product, type_of_product, num_of_product, cost) VALUES({int(id_user)}, "{product}", "{type_}", {num}, {cost})""")
         except Exception as e:
             print(e)
+
+
+async def get_orders(id_user):
+    with sqlite3.connect('orders.db') as con:
+        cur = con.cursor()
+        orders = cur.execute(f"""SELECT * FROM orders WHERE id_user = {id_user}""").fetchall()
+        return orders
