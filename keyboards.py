@@ -21,6 +21,22 @@ for i in range(0, 10, 5):
     keyboard_count_of_product.row(*kb_count[i:i + 5])
 keyboard_count_of_product.add('В меню')
 
+
+async def set_inline_cancel(orders):
+    # keyboard_cancel = ReplyKeyboardMarkup()
+    # kb_orders = [KeyboardButton(f'{i}') for i in range(1, len(orders) + 1)]
+    # for i in range(0, len(orders), 4):
+    #     keyboard_cancel.row(*kb_orders[i:i + 4])
+    # keyboard_cancel.add('В меню')
+    # return keyboard_cancel
+    inline_cancel = InlineKeyboardMarkup()
+    inline_btn_cancel = [InlineKeyboardButton(str(i), callback_data=f'btn_order_{i - 1}') for i in range(1, len(orders) + 1)]
+    print(inline_btn_cancel)
+    for i in range(0, len(orders), 4):
+        inline_cancel.row(*inline_btn_cancel[i:i + 4])
+    inline_cancel.row(InlineKeyboardButton('В меню'))
+    return inline_cancel
+
 # Вкусы позиций
 def set_inline_of_types(product: str):
     count_of_btn = id_btn_of_types[product]
@@ -62,5 +78,3 @@ def set_inline_of_types(product: str):
             count_of_btn += 1
     inline_types_of_products.row(InlineKeyboardButton('Назад', callback_data=f'btn_back'))
     return inline_types_of_products
-
-

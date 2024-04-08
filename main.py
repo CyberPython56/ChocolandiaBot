@@ -6,8 +6,8 @@ from aiogram.utils.markdown import text, bold, italic, code
 from aiogram.types import ParseMode, InputMediaPhoto, ReplyKeyboardRemove
 from emoji import emojize
 
-from config import TOKEN, names_of_button, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
-from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product
+from config import TOKEN, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
+from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_inline_cancel
 from media import *
 from prices import *
 from orders import *
@@ -44,31 +44,58 @@ async def process_buy_type_of_product(callback_query: types.CallbackQuery):
 
 async def send_photo_and_price(callback_query: types.CallbackQuery):
     data = callback_query.data
+    flag = False
     if data.startswith('btn_1'):
         type_ = int(data[-1])
-        file = PHOTO_PRODUCT_1[type_]
+        file = [PHOTO_PRODUCT_1[type_]]
         price = PRICE_PRODUCT_1[type_]
         await list_of_orders[callback_query.from_user.id].set_cost(price)
         await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Трюфели'][type_])
-    if data.startswith('btn_2'):
+    elif data.startswith('btn_2'):
         type_ = int(data[-1])
-        file = PHOTO_PRODUCT_2[type_]
+        file = [PHOTO_PRODUCT_2[type_]]
         price = PRICE_PRODUCT_2[type_]
         await list_of_orders[callback_query.from_user.id].set_cost(price)
         await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Корпусные конфеты'][type_])
+    elif data.startswith('btn3'):
+        file = [PHOTO_PRODUCT_3[x] for x in PHOTO_PRODUCT_3.keys()]
+        price = PRICE_PRODUCT_3[0]
+        await list_of_orders[callback_query.from_user.id].set_cost(price)
+    elif data.startswith('btn_4'):
+        type_ = int(data[-1])
+        file = [PHOTO_PRODUCT_4[x] for x in PHOTO_PRODUCT_4]
+        price = PRICE_PRODUCT_4[type_]
+        await list_of_orders[callback_query.from_user.id].set_cost(price)
+        await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Шоколадные плитки'][type_])
+    elif data.startswith('btn5'):
+        file = [PHOTO_PRODUCT_5[x] for x in PHOTO_PRODUCT_5.keys()]
+        price = PRICE_PRODUCT_5[0]
+        flag = True
+        await list_of_orders[callback_query.from_user.id].set_cost(price)
+    elif data.startswith('btn6'):
+        file = [PHOTO_PRODUCT_6[x] for x in PHOTO_PRODUCT_6.keys()]
+        price = PRICE_PRODUCT_6[0]
+        type_ = None
+        await list_of_orders[callback_query.from_user.id].set_cost(price)
     elif data.startswith('btn_7'):
         type_ = int(data[-1])
-        file = PHOTO_PRODUCT_7[type_]
+        file = [PHOTO_PRODUCT_7[type_]]
         price = PRICE_PRODUCT_7[type_]
         # print(price, type(price))
         await list_of_orders[callback_query.from_user.id].set_cost(price)
         await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Молочные сырки'][type_])
     print(list_of_orders[callback_query.from_user.id])
-    file_res = [InputMediaPhoto(file)]
+    file_res = [InputMediaPhoto(x) for x in file]
     await bot.send_media_group(callback_query.from_user.id, file_res)
-    await bot.send_message(callback_query.from_user.id,
-                           text=f'Цена: {price} руб.\nПожалуйста, укажите желаемое количество:',
-                           reply_markup=keyboard_count_of_product, parse_mode=ParseMode.MARKDOWN)
+    if flag:
+        await bot.send_message(callback_query.from_user.id,
+                               f'По поводу фигурок жду ваших сообщений в личном чате, для договора о тематике @kkatia0. Стоимость одной фигурки {PRICE_PRODUCT_5[0]} рублей')
+        await process_menu_command(callback_query)
+    else:
+        name = bold(id_btn_of_product[int(str([x for x in data if x.isdigit()][0]))])
+        await bot.send_message(callback_query.from_user.id,
+                               text=f'{name}\nЦена: {price} руб.\nПожалуйста, укажите желаемое количество:',
+                               reply_markup=keyboard_count_of_product, parse_mode=ParseMode.MARKDOWN)
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('btn'))
@@ -76,7 +103,7 @@ async def process_callback_kb1btn1(callback_query: types.CallbackQuery):
     code = callback_query.data[-1]
     if code.isdigit():
         code = int(code)
-        product = names_of_button[code]
+        product = id_btn_of_product[code]
         await create_order(callback_query.from_user.id)
         await list_of_orders[callback_query.from_user.id].set_product(product)
         print(list_of_orders[callback_query.from_user.id])
@@ -86,6 +113,7 @@ async def process_callback_kb1btn1(callback_query: types.CallbackQuery):
                                bold(f'Выберите вкус {alt_name_of_product[id_btn_of_product[code]]}:'),
                                reply_markup=set_inline_of_types(product=product), parse_mode=ParseMode.MARKDOWN)
     else:
+        await list_of_orders[callback_query.from_user.id].set_type(None)
         await send_photo_and_price(callback_query)
     # await process_menu_command(callback_query)
 
@@ -102,7 +130,8 @@ async def accept_buying(msg: types.Message):
 @dp.message_handler(lambda msg: msg.text == 'Да, хочу заказать!')
 async def get_accept(msg: types.Message):
     await save_order(id_user=msg.from_user.id)
-    await bot.send_message(msg.from_user.id, emojize('Заказ сохранен! Спасибо за покупку!:check_mark_button:'))
+    await bot.send_message(msg.from_user.id, emojize(
+        'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'))
     print('[+]Заказ сохранен в БД')
     await process_menu_command(msg=msg)
 
@@ -116,6 +145,34 @@ async def process_buying(msg: types.Message):
         await bot.send_message(msg.from_user.id, 'Возвращаюсь в меню...', reply_markup=ReplyKeyboardRemove())
         await process_menu_command(msg)
 
+
+@dp.message_handler(commands=['orders'])
+async def send_orders(msg: types.Message):
+    orders = await get_orders(msg.from_user.id)
+    orders_string = [
+        bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт. Итоговая стоимость: ' + str(order[5]) + ' рублей'
+        for
+        order
+        in orders]
+    orders_string = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(len(orders_string))]).replace(
+        'None ', '')
+    await bot.send_message(msg.from_user.id, emojize(f'Ваши заказы:\n{orders_string}'), parse_mode=ParseMode.MARKDOWN)
+    await bot.send_message(msg.from_user.id, 'Для отмены заказа используйте команду /cancel_order')
+
+
+@dp.message_handler(commands=['cancel_order'])
+async def cancel_order(msg: types.Message):
+    orders = await get_orders(msg.from_user.id)
+    await bot.send_message(msg.from_user.id, 'Отмену заказа еще не дописал((')
+    await process_menu_command(msg)
+    # await bot.send_message(msg.from_user.id, 'Пришлите номер заказа, который хотите отменить',
+    #                        reply_markup=await set_inline_cancel(orders))
+
+
+@dp.message_handler()
+async def any_message(msg: types.Message):
+    await bot.send_message(msg.from_user.id, 'Я не знаю такую команду')
+    await process_menu_command(msg)
 
 @dp.message_handler(content_types=['photo'])
 async def scan_message(msg: types.Message):
