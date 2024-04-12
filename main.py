@@ -8,7 +8,7 @@ from emoji import emojize
 from datetime import datetime
 
 from config import TOKEN, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
-from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_inline_cancel
+from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_keyboard_cancel
 from media import *
 from prices import *
 from orders import *
@@ -168,13 +168,21 @@ async def send_orders(msg: types.Message):
                            'Для отмены заказа используйте  команду /cancel_order\nДля возврата в меню /menu')
 
 
-@dp.message_handler(commands=['cancel_order'])
-async def cancel_order(msg: types.Message):
+@dp.message_handler(lambda msg: msg.text.startswith('Отменить заказ №'))
+async def process_cancel_order(msg: types.Message):
+    num_order = int(msg.text[-1])
     orders = await get_orders(msg.from_user.id)
-    await bot.send_message(msg.from_user.id, 'Отмену заказа еще не дописал((')
+    await cancel_order(orders[num_order - 1][0])
+    await bot.send_message(msg.from_user.id, f'Заказ №{num_order} ({orders[num_order - 1][2]}) отменен.',
+                           reply_markup=ReplyKeyboardRemove())
     await process_menu_command(msg)
-    # await bot.send_message(msg.from_user.id, 'Пришлите номер заказа, который хотите отменить',
-    #                        reply_markup=await set_inline_cancel(orders))
+
+
+@dp.message_handler(commands=['cancel_order'])
+async def get_num_cancel_order(msg: types.Message):
+    orders = await get_orders(msg.from_user.id)
+    await bot.send_message(msg.from_user.id, 'Пришлите номер заказа, который хотите отменить',
+                           reply_markup=await set_keyboard_cancel(orders))
 
 
 @dp.message_handler(content_types=['photo'])
