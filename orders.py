@@ -10,7 +10,7 @@ class Order:
         self.cost = 690
 
     def __str__(self):
-        return f'Пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
+        return f'пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
 
     async def get_product(self):
         return self.product
@@ -45,17 +45,18 @@ async def create_order(id_user):
 
 
 async def save_order(id_user):
-    with sqlite3.connect('orders.db') as con:
-        cur = con.cursor()
-        product = await list_of_orders[id_user].get_product()
-        type_ = await list_of_orders[id_user].get_type()
-        num = await list_of_orders[id_user].get_num()
-        cost = await list_of_orders[id_user].get_cost()
-        try:
-            cur.execute(
-                f"""INSERT INTO orders(id_user, product, type_of_product, num_of_product, cost) VALUES({int(id_user)}, "{product}", "{type_}", {num}, {cost})""")
-        except Exception as e:
-            print(e)
+    if await list_of_orders[id_user].get_product() != '':
+        with sqlite3.connect('orders.db') as con:
+            cur = con.cursor()
+            product = await list_of_orders[id_user].get_product()
+            type_ = await list_of_orders[id_user].get_type()
+            num = await list_of_orders[id_user].get_num()
+            cost = await list_of_orders[id_user].get_cost()
+            try:
+                cur.execute(
+                    f"""INSERT INTO orders(id_user, product, type_of_product, num_of_product, cost) VALUES({int(id_user)}, "{product}", "{type_}", {num}, {cost})""")
+            except Exception as e:
+                print(e)
 
 
 async def get_orders(id_user):

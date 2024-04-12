@@ -5,6 +5,7 @@ from aiogram.types.message import ContentType
 from aiogram.utils.markdown import text, bold, italic, code
 from aiogram.types import ParseMode, InputMediaPhoto, ReplyKeyboardRemove
 from emoji import emojize
+from datetime import datetime
 
 from config import TOKEN, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
 from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_inline_cancel
@@ -21,6 +22,14 @@ async def process_start_command(message: types.Message):
     msg = text(emojize('Привет! Я бот, который сделает твою жизнь слаще!:face_savoring_food:'))
     await bot.send_message(message.from_user.id, msg, parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(message)
+
+
+@dp.message_handler(commands=['help'])
+async def help(msg: types.Message):
+    await bot.send_message(msg.from_user.id, emojize('Я бот, который поможет тебе наполнить свою жизнь '
+                                                     'шоколадом:chocolate_bar:\nВот мои команды:\n/start\n/menu\n/orders'
+                                                     '\n/cancel_order\nЕсли хочешь себе такого же бота, то напиши '
+                                                     'моему создателю @CyberPyth0n'))
 
 
 @dp.message_handler(commands=['menu'])
@@ -75,7 +84,6 @@ async def send_photo_and_price(callback_query: types.CallbackQuery):
     elif data.startswith('btn6'):
         file = [PHOTO_PRODUCT_6[x] for x in PHOTO_PRODUCT_6.keys()]
         price = PRICE_PRODUCT_6[0]
-        type_ = None
         await list_of_orders[callback_query.from_user.id].set_cost(price)
     elif data.startswith('btn_7'):
         type_ = int(data[-1])
@@ -84,12 +92,12 @@ async def send_photo_and_price(callback_query: types.CallbackQuery):
         # print(price, type(price))
         await list_of_orders[callback_query.from_user.id].set_cost(price)
         await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Молочные сырки'][type_])
-    print(list_of_orders[callback_query.from_user.id])
     file_res = [InputMediaPhoto(x) for x in file]
     await bot.send_media_group(callback_query.from_user.id, file_res)
     if flag:
         await bot.send_message(callback_query.from_user.id,
-                               f'По поводу фигурок жду ваших сообщений в личном чате, для договора о тематике @kkatia0. Стоимость одной фигурки {PRICE_PRODUCT_5[0]} рублей')
+                               f'По поводу фигурок жду ваших сообщений в личном чате, для договора о тематике @kkatia0.'
+                               f' Стоимость одной фигурки {PRICE_PRODUCT_5[0]} рублей')
         await process_menu_command(callback_query)
     else:
         name = bold(id_btn_of_product[int(str([x for x in data if x.isdigit()][0]))])
@@ -106,7 +114,7 @@ async def process_callback_kb1btn1(callback_query: types.CallbackQuery):
         product = id_btn_of_product[code]
         await create_order(callback_query.from_user.id)
         await list_of_orders[callback_query.from_user.id].set_product(product)
-        print(list_of_orders[callback_query.from_user.id])
+        await print_info(callback_query)
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
     if id_btn_of_product[code] in id_btn_of_types.keys():
         await bot.send_message(callback_query.from_user.id,
@@ -122,7 +130,7 @@ async def accept_buying(msg: types.Message):
     price = await list_of_orders[msg.from_user.id].get_cost()
     cost = price * await list_of_orders[msg.from_user.id].get_num()
     await list_of_orders[msg.from_user.id].set_cost(cost)
-    print(list_of_orders[msg.from_user.id])
+    await print_info(msg)
     await bot.send_message(msg.from_user.id, f'Сумма заказа {cost} рублей. Подтверждаете покупку?',
                            reply_markup=keyboard_accept)
 
@@ -131,8 +139,9 @@ async def accept_buying(msg: types.Message):
 async def get_accept(msg: types.Message):
     await save_order(id_user=msg.from_user.id)
     await bot.send_message(msg.from_user.id, emojize(
-        'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'))
-    print('[+]Заказ сохранен в БД')
+        'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'),
+                           reply_markup=ReplyKeyboardRemove())
+    print('[+]Заказ сохранен в БД –––', msg.from_user.first_name, str(datetime.now())[:18])
     await process_menu_command(msg=msg)
 
 
@@ -150,14 +159,13 @@ async def process_buying(msg: types.Message):
 async def send_orders(msg: types.Message):
     orders = await get_orders(msg.from_user.id)
     orders_string = [
-        bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт. Итоговая стоимость: ' + str(order[5]) + ' рублей'
-        for
-        order
-        in orders]
+        bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт.\nИтоговая стоимость: ' + str(order[5]) + ' рублей'
+        for order in orders]
     orders_string = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(len(orders_string))]).replace(
         'None ', '')
     await bot.send_message(msg.from_user.id, emojize(f'Ваши заказы:\n{orders_string}'), parse_mode=ParseMode.MARKDOWN)
-    await bot.send_message(msg.from_user.id, 'Для отмены заказа используйте команду /cancel_order')
+    await bot.send_message(msg.from_user.id,
+                           'Для отмены заказа используйте  команду /cancel_order\nДля возврата в меню /menu')
 
 
 @dp.message_handler(commands=['cancel_order'])
@@ -168,11 +176,6 @@ async def cancel_order(msg: types.Message):
     # await bot.send_message(msg.from_user.id, 'Пришлите номер заказа, который хотите отменить',
     #                        reply_markup=await set_inline_cancel(orders))
 
-
-@dp.message_handler()
-async def any_message(msg: types.Message):
-    await bot.send_message(msg.from_user.id, 'Я не знаю такую команду')
-    await process_menu_command(msg)
 
 @dp.message_handler(content_types=['photo'])
 async def scan_message(msg: types.Message):
@@ -192,11 +195,19 @@ async def video_file_id(message: types.Message):
 
 @dp.message_handler(content_types=ContentType.ANY)
 async def unknown_message(msg: types.Message):
-    message_text = text('Я не знаю, что с этим делать :upside-down_face:',
-                        italic('\nЯ напоминаю, что есть'),
+    message_text = text('Я не знаю, что с этим делать:pensive_face:\nЯ напоминаю, что есть',
                         code('команда'), '/help')
-    await msg.reply(message_text, parse_mode=ParseMode.MARKDOWN)
+    await msg.reply(emojize(message_text), parse_mode=ParseMode.MARKDOWN)
+    await process_menu_command(msg)
+
+
+async def print_info(msg):
+    print(msg.from_user.first_name, msg.from_user.username, '–', list_of_orders[msg.from_user.id],
+          '' + str(datetime.now().time())[:8])
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp)
+    try:
+        executor.start_polling(dp)
+    except Exception as e:
+        print(e)
