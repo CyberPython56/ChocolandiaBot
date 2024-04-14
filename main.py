@@ -161,8 +161,16 @@ async def send_orders(msg: types.Message):
     orders_string = [
         bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт.\nИтоговая стоимость: ' + str(order[5]) + ' рублей'
         for order in orders]
-    orders_string = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(len(orders_string))]).replace(
-        'None ', '')
+    if len(orders_string) < 10:
+        orders_string = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(len(orders_string))]).replace(
+            'None ', '')
+    elif len(orders_string) < 20:
+        orders_string_10 = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(10)]).replace(
+            'None ', '')
+        orders_string_20 = '\n'.join(
+            [':keycap_1:' + f':keycap_{(i % 10) + 1}:' + orders_string[i] for i in range(10, len(orders_string))]).replace(
+            'None', '')
+        orders_string = orders_string_10 + '\n' + orders_string_20
     await bot.send_message(msg.from_user.id, emojize(f'Ваши заказы:\n{orders_string}'), parse_mode=ParseMode.MARKDOWN)
     await bot.send_message(msg.from_user.id,
                            'Для отмены заказа используйте  команду /cancel_order\nДля возврата в меню /menu')
@@ -173,8 +181,8 @@ async def process_cancel_order(msg: types.Message):
     num_order = int(msg.text[-1])
     orders = await get_orders(msg.from_user.id)
     await cancel_order(orders[num_order - 1][0])
-    await bot.send_message(msg.from_user.id, f'Заказ №{num_order} ({orders[num_order - 1][2]}) отменен.',
-                           reply_markup=ReplyKeyboardRemove())
+    await bot.send_message(msg.from_user.id, f'Заказ №{num_order} ' + italic(f'{orders[num_order - 1][2]}') + ' отменен.',
+                           reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg)
 
 
