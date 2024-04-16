@@ -7,7 +7,7 @@ from aiogram.types import ParseMode, InputMediaPhoto, ReplyKeyboardRemove
 from emoji import emojize
 from datetime import datetime
 
-from config import TOKEN, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
+from config import TOKEN, ADMINS_ID, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
 from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_keyboard_cancel
 from media import *
 from prices import *
@@ -142,6 +142,9 @@ async def get_accept(msg: types.Message):
         'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'),
                            reply_markup=ReplyKeyboardRemove())
     print('[+]Заказ сохранен в БД –––', msg.from_user.first_name, str(datetime.now())[:18])
+    for admin in ADMINS_ID:
+        await bot.send_message(admin, bold('Новый заказ: ') + f'{list_of_orders[msg.from_user.id]}',
+                               parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg=msg)
 
 
@@ -168,7 +171,8 @@ async def send_orders(msg: types.Message):
         orders_string_10 = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(10)]).replace(
             'None ', '')
         orders_string_20 = '\n'.join(
-            [':keycap_1:' + f':keycap_{(i % 10) + 1}:' + orders_string[i] for i in range(10, len(orders_string))]).replace(
+            [':keycap_1:' + f':keycap_{(i % 10) + 1}:' + orders_string[i] for i in
+             range(10, len(orders_string))]).replace(
             'None', '')
         orders_string = orders_string_10 + '\n' + orders_string_20
     await bot.send_message(msg.from_user.id, emojize(f'Ваши заказы:\n{orders_string}'), parse_mode=ParseMode.MARKDOWN)
@@ -181,8 +185,12 @@ async def process_cancel_order(msg: types.Message):
     num_order = int(msg.text[-1])
     orders = await get_orders(msg.from_user.id)
     await cancel_order(orders[num_order - 1][0])
-    await bot.send_message(msg.from_user.id, f'Заказ №{num_order} ' + italic(f'{orders[num_order - 1][2]}') + ' отменен.',
+    await bot.send_message(msg.from_user.id,
+                           f'Заказ №{num_order} ' + italic(f'{orders[num_order - 1][2]}') + ' отменен.',
                            reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+    for admin in ADMINS_ID:
+        await bot.send_message(admin, bold('Отмена заказа: ') + f'{orders[num_order - 1]}',
+                               parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg)
 
 

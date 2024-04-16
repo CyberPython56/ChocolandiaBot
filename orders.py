@@ -12,6 +12,9 @@ class Order:
     def __str__(self):
         return f'Пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
 
+    def __repr__(self):
+        return f'Пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
+
     async def get_product(self):
         return self.product
 
