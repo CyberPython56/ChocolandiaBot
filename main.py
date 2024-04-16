@@ -137,13 +137,14 @@ async def accept_buying(msg: types.Message):
 
 @dp.message_handler(lambda msg: msg.text == 'Да, хочу заказать!')
 async def get_accept(msg: types.Message):
-    await save_order(id_user=msg.from_user.id)
+    id_order = await save_order(id_user=msg.from_user.id)
     await bot.send_message(msg.from_user.id, emojize(
         'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'),
                            reply_markup=ReplyKeyboardRemove())
-    print('[+]Заказ сохранен в БД –––', msg.from_user.first_name, str(datetime.now())[:18])
+    print(f'[+]Заказ №{id_order} сохранен в БД –––', id_order, msg.from_user.first_name, str(datetime.now())[:18])
     for admin in ADMINS_ID:
-        await bot.send_message(admin, bold('Новый заказ: ') + f'{list_of_orders[msg.from_user.id]}',
+        await bot.send_message(admin, emojize(
+            ':check_mark_button:' + bold(f'Новый заказ №{id_order}: ')) + f'{list_of_orders[msg.from_user.id]}',
                                parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg=msg)
 
@@ -188,8 +189,9 @@ async def process_cancel_order(msg: types.Message):
     await bot.send_message(msg.from_user.id,
                            f'Заказ №{num_order} ' + italic(f'{orders[num_order - 1][2]}') + ' отменен.',
                            reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+    print(f'[-]Заказ №{orders[num_order - 1][0]} удален –––', msg.from_user.first_name, str(datetime.now())[:18])
     for admin in ADMINS_ID:
-        await bot.send_message(admin, bold('Отмена заказа: ') + f'{orders[num_order - 1]}',
+        await bot.send_message(admin, emojize(':cross_mark:' + bold(f'Отмена заказа №: {orders[num_order - 1][0]}')),
                                parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg)
 

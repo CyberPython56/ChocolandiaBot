@@ -10,10 +10,12 @@ class Order:
         self.cost = 690
 
     def __str__(self):
-        return f'Пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
+        return f'Пользователь: {self.id_user}, {self.product} {self.type} {self.num} шт. – {self.cost} рублей'.replace(
+            'None ', '')
 
     def __repr__(self):
-        return f'Пользователь: {self.id_user}, продукт: {self.product}, вкус: {self.type}, кол-во: {self.num}, стоимость: {self.cost}'
+        return f'Пользователь: {self.id_user}, {self.product} {self.type} {self.num} шт. – {self.cost} рублей'.replace(
+            'None ', '')
 
     async def get_product(self):
         return self.product
@@ -57,8 +59,10 @@ async def save_order(id_user):
         try:
             cur.execute(
                 f"""INSERT INTO orders(id_user, product, type_of_product, num_of_product, cost) VALUES({int(id_user)}, "{product}", "{type_}", {num}, {cost})""")
+            id = int(cur.execute(f"""SELECT id FROM orders WHERE id_user={id_user}""").fetchall()[-1][0])
         except Exception as e:
             print(e)
+    return id
 
 
 async def get_orders(id_user):
@@ -69,6 +73,10 @@ async def get_orders(id_user):
 
 
 async def cancel_order(id_order):
-    with sqlite3.connect('orders.db') as con:
-        cur = con.cursor()
-        cur.execute(f"""DELETE FROM orders WHERE id={id_order}""")
+    try:
+        with sqlite3.connect('orders.db') as con:
+            cur = con.cursor()
+            cur.execute(f"""DELETE FROM orders WHERE id={id_order}""")
+    except Exception as e:
+        print(type(e))
+
