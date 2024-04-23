@@ -163,8 +163,8 @@ async def process_buying(msg: types.Message):
 async def send_orders(msg: types.Message):
     orders = await get_orders(msg.from_user.id)
     orders_string = [
-        bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт.\nИтоговая стоимость: ' + str(order[5]) + ' рублей'
-        for order in orders]
+        bold(order[2]) + ' ' + order[3] + ' ' + str(order[4]) + ' шт.\n' + italic('Итоговая стоимость: ') + str(
+            order[5]) + ' рублей.' + italic('\nСостояние: ') + order[6].lower() for order in orders]
     if len(orders_string) < 10:
         orders_string = '\n'.join([f':keycap_{i + 1}:' + orders_string[i] for i in range(len(orders_string))]).replace(
             'None ', '')
