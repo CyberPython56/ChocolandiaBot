@@ -47,6 +47,19 @@ async def process_back(callback_query: types.CallbackQuery):
     await process_menu_command(callback_query)
 
 
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith('btn_accept_order'))
+@dp.callback_query_handler(lambda c: c.data and c.data.startswith('btn_cancel_order'))
+async def process_state_order(callback_query: types.CallbackQuery):
+    if callback_query.data.startswith('btn_accept_order'):
+        id_order = int(callback_query.data[callback_query.data.index('order') + 5:])
+        await change_state_order(id_order)
+        await bot.send_message(callback_query.from_user.id, bold(f'Заказ №{id_order} принят'),
+                               reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
+    elif callback_query.data.startswith('btn_cancel_order'):
+        id_order = int(callback_query.data[callback_query.data.index('order') + 5:])
+        # await change_state_order(id_order)
+
+
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('btn_'))
 async def process_buy_type_of_product(callback_query: types.CallbackQuery):
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)

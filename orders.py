@@ -87,3 +87,12 @@ async def cancel_order(id_order):
             cur.execute(f"""DELETE FROM orders WHERE id={id_order}""")
     except Exception as e:
         print(type(e))
+
+
+async def change_state_order(id_order, state='Заказ принят'):
+    try:
+        with sqlite3.connect('orders.db') as con:
+            cur = con.cursor()
+            cur.execute(f"""UPDATE orders SET state = "{state}" WHERE id = {id_order}""")
+    except Exception as e:
+        print(type(e))
