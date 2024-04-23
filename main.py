@@ -7,11 +7,13 @@ from aiogram.types import ParseMode, InputMediaPhoto, ReplyKeyboardRemove
 from emoji import emojize
 from datetime import datetime
 
-from config import TOKEN, ADMINS_ID, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
-from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_keyboard_cancel
+from config import TOKEN, id_btn_of_types, alt_name_of_product, id_btn_of_product, types_of_products
+from keyboards import inline_menu, set_inline_of_types, keyboard_accept, keyboard_count_of_product, set_keyboard_cancel, \
+    confirm_order
 from media import *
 from prices import *
 from orders import *
+from admin import ADMINS_ID
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -34,7 +36,7 @@ async def help(msg: types.Message):
 
 @dp.message_handler(commands=['menu'])
 async def process_menu_command(msg: types.Message):
-    await create_order(msg.from_user.id)
+    await create_order(msg.from_user.id, msg.from_user.first_name)
     await bot.send_message(msg.from_user.id, bold('Выберите то, что вас интересует:'), reply_markup=inline_menu,
                            parse_mode=ParseMode.MARKDOWN)
 
@@ -89,7 +91,6 @@ async def send_photo_and_price(callback_query: types.CallbackQuery):
         type_ = int(data[-1])
         file = [PHOTO_PRODUCT_7[type_]]
         price = PRICE_PRODUCT_7[type_]
-        # print(price, type(price))
         await list_of_orders[callback_query.from_user.id].set_cost(price)
         await list_of_orders[callback_query.from_user.id].set_type(types_of_products['Молочные сырки'][type_])
     file_res = [InputMediaPhoto(x) for x in file]
@@ -112,18 +113,17 @@ async def process_callback_kb1btn1(callback_query: types.CallbackQuery):
     if code.isdigit():
         code = int(code)
         product = id_btn_of_product[code]
-        await create_order(callback_query.from_user.id)
+        await create_order(callback_query.from_user.id, callback_query.from_user.first_name)
         await list_of_orders[callback_query.from_user.id].set_product(product)
         await print_info(callback_query)
     await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
     if id_btn_of_product[code] in id_btn_of_types.keys():
         await bot.send_message(callback_query.from_user.id,
                                bold(f'Выберите вкус {alt_name_of_product[id_btn_of_product[code]]}:'),
-                               reply_markup=set_inline_of_types(product=product), parse_mode=ParseMode.MARKDOWN)
+                               reply_markup=await set_inline_of_types(product=product), parse_mode=ParseMode.MARKDOWN)
     else:
         await list_of_orders[callback_query.from_user.id].set_type(None)
         await send_photo_and_price(callback_query)
-    # await process_menu_command(callback_query)
 
 
 async def accept_buying(msg: types.Message):
@@ -141,11 +141,11 @@ async def get_accept(msg: types.Message):
     await bot.send_message(msg.from_user.id, emojize(
         'Заказ сохранен! Спасибо за покупку!:check_mark_button:\nДля просмотра заказов используйте команду /orders'),
                            reply_markup=ReplyKeyboardRemove())
-    print(f'[+]Заказ №{id_order} сохранен в БД –––', id_order, msg.from_user.first_name, str(datetime.now())[:18])
-    for admin in ADMINS_ID:
+    print(f'[+]Заказ №{id_order} сохранен в БД –––', msg.from_user.first_name, str(datetime.now())[:18])
+    for admin in [admin for admin in ADMINS_ID.keys() if ADMINS_ID[admin]]:
         await bot.send_message(admin, emojize(
             ':check_mark_button:' + bold(f'Новый заказ №{id_order}: ')) + f'{list_of_orders[msg.from_user.id]}',
-                               parse_mode=ParseMode.MARKDOWN)
+                               parse_mode=ParseMode.MARKDOWN, reply_markup=await confirm_order(id_order))
     await process_menu_command(msg=msg)
 
 
@@ -190,9 +190,28 @@ async def process_cancel_order(msg: types.Message):
                            f'Заказ №{num_order} ' + italic(f'{orders[num_order - 1][2]}') + ' отменен.',
                            reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
     print(f'[-]Заказ №{orders[num_order - 1][0]} удален –––', msg.from_user.first_name, str(datetime.now())[:18])
-    for admin in ADMINS_ID:
+    for admin in [admin for admin in ADMINS_ID.keys() if ADMINS_ID[admin]]:
         await bot.send_message(admin, emojize(':cross_mark:' + bold(f'Отмена заказа №: {orders[num_order - 1][0]}')),
                                parse_mode=ParseMode.MARKDOWN)
+    await process_menu_command(msg)
+
+
+@dp.message_handler(commands=['admin'])
+async def admin(msg: types.Message):
+    if msg.from_user.id in ADMINS_ID.keys():
+        ADMINS_ID[msg.from_user.id] = True
+        await bot.send_message(msg.from_user.id, emojize('Вы вошли в режим админа:unlocked:'))
+    else:
+        await bot.send_message(msg.from_user.id, emojize('К сожалению, вы не являетесь админом:worried_face:'))
+
+
+@dp.message_handler(commands=['admin_off'])
+async def admin(msg: types.Message):
+    if msg.from_user.id in ADMINS_ID.keys():
+        ADMINS_ID[msg.from_user.id] = False
+        await bot.send_message(msg.from_user.id, emojize('Вы вышли из режима админа:locked:'))
+    else:
+        await bot.send_message(msg.from_user.id, emojize('К сожалению, вы не являетесь админом:worried_face:'))
     await process_menu_command(msg)
 
 

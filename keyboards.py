@@ -32,7 +32,7 @@ async def set_keyboard_cancel(orders):
 
 
 # Вкусы позиций
-def set_inline_of_types(product: str):
+async def set_inline_of_types(product: str):
     count_of_btn = id_btn_of_types[product]
     inline_types_of_products = InlineKeyboardMarkup()
     types = sorted(types_of_products[product], key=lambda x: len(x))
@@ -72,3 +72,17 @@ def set_inline_of_types(product: str):
             count_of_btn += 1
     inline_types_of_products.row(InlineKeyboardButton('Назад', callback_data=f'btn_back'))
     return inline_types_of_products
+
+
+# Админка
+async def confirm_order(id_order):
+    confirm = InlineKeyboardMarkup().row(
+        InlineKeyboardButton('Подтвердить заказ', callback_data=f'btn_accept_order{id_order}'), InlineKeyboardButton('Отменить заказ', callback_data=f'btn_cancel_order{id_order}'))
+    return confirm
+
+
+menu_admin = InlineKeyboardMarkup()
+
+
+async def set_admin_menu():
+    pass
