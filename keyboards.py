@@ -78,8 +78,8 @@ async def set_inline_of_types(product: str):
 # Админка
 async def confirm_order(id_order):
     confirm = InlineKeyboardMarkup().row(
-        InlineKeyboardButton(emojize('Подтвердить заказ:check_mark_button:'), callback_data=f'btn_accept_order{id_order}'),
-        InlineKeyboardButton(emojize('Отказать:cross_mark:'), callback_data=f'btn_cancel_order{id_order}'))
+        InlineKeyboardButton(emojize('Подтвердить:check_mark_button:'), callback_data=f'btn_accept_order{id_order}'),
+        InlineKeyboardButton(emojize('Отменить:cross_mark:'), callback_data=f'btn_cancel_order{id_order}'))
     return confirm
 
 

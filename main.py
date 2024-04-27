@@ -52,11 +52,21 @@ async def process_back(callback_query: types.CallbackQuery):
 async def process_state_order(callback_query: types.CallbackQuery):
     if callback_query.data.startswith('btn_accept_order'):
         id_order = int(callback_query.data[callback_query.data.index('order') + 5:])
+        await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
         await change_state_order(id_order)
-        await bot.send_message(callback_query.from_user.id, bold(f'Заказ №{id_order} принят'),
+        await bot.send_message(callback_query.from_user.id, bold(f'Заказ №{id_order} принят') + emojize(
+            ':check_mark_button:') + '\n' + callback_query.message.text[
+                                            callback_query.message.text.index(
+                                                'Пользователь'):callback_query.message.text.index(
+                                                'Состояние')],
                                reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
     elif callback_query.data.startswith('btn_cancel_order'):
         id_order = int(callback_query.data[callback_query.data.index('order') + 5:])
+        await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
+        await cancel_order(id_order)
+        await bot.send_message(callback_query.from_user.id,
+                               bold(f'Заказ №{id_order} отменен') + emojize(':cross_mark:'),
+                               parse_mode=ParseMode.MARKDOWN)
         # await change_state_order(id_order)
 
 
@@ -157,7 +167,7 @@ async def get_accept(msg: types.Message):
     print(f'[+]Заказ №{id_order} сохранен в БД –––', msg.from_user.first_name, str(datetime.now())[:18])
     for admin in [admin for admin in ADMINS_ID.keys() if ADMINS_ID[admin]]:
         await bot.send_message(admin, emojize(
-            ':check_mark_button:' + bold(f'Новый заказ №{id_order}: ')) + f'{list_of_orders[msg.from_user.id]}',
+            ':round_pushpin:' + bold(f'Новый заказ №{id_order}: ')) + f'{list_of_orders[msg.from_user.id]}',
                                parse_mode=ParseMode.MARKDOWN, reply_markup=await confirm_order(id_order))
     await process_menu_command(msg=msg)
 
@@ -204,7 +214,7 @@ async def process_cancel_order(msg: types.Message):
                            reply_markup=ReplyKeyboardRemove(), parse_mode=ParseMode.MARKDOWN)
     print(f'[-]Заказ №{orders[num_order - 1][0]} удален –––', msg.from_user.first_name, str(datetime.now())[:18])
     for admin in [admin for admin in ADMINS_ID.keys() if ADMINS_ID[admin]]:
-        await bot.send_message(admin, emojize(':cross_mark:' + bold(f'Отмена заказа №: {orders[num_order - 1][0]}')),
+        await bot.send_message(admin, emojize(':cross_mark:' + bold(f'Отмена заказа №{orders[num_order - 1][0]}')),
                                parse_mode=ParseMode.MARKDOWN)
     await process_menu_command(msg)
 
