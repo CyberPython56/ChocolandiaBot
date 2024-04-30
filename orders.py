@@ -96,3 +96,21 @@ async def change_state_order(id_order, state='Заказ принят'):
             cur.execute(f"""UPDATE orders SET state = "{state}" WHERE id = {id_order}""")
     except Exception as e:
         print(type(e))
+
+async def get_id_user(id_order: int):
+    try:
+        with sqlite3.connect('orders.db') as con:
+            cur = con.cursor()
+            id_user = int(cur.execute(f"""SELECT id_user FROM orders WHERE id={id_order}""").fetchone()[0])
+            return id_user
+    except Exception as e:
+        print(type(e))
+
+async def get_order_from_id(id_order: int):
+    try:
+        with sqlite3.connect('orders.db') as con:
+            cur = con.cursor()
+            order = cur.execute(f"""SELECT * FROM orders WHERE id = {id_order}""").fetchone()
+        return order
+    except Exception as e:
+        print(type(e))

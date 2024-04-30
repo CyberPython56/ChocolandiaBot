@@ -63,10 +63,15 @@ async def process_state_order(callback_query: types.CallbackQuery):
     elif callback_query.data.startswith('btn_cancel_order'):
         id_order = int(callback_query.data[callback_query.data.index('order') + 5:])
         await bot.delete_message(chat_id=callback_query.from_user.id, message_id=callback_query.message.message_id)
+        # id_user = await get_id_user(id_order)
+        # order = await get_order_from_id(id_order)
         await cancel_order(id_order)
         await bot.send_message(callback_query.from_user.id,
                                bold(f'Заказ №{id_order} отменен') + emojize(':cross_mark:'),
                                parse_mode=ParseMode.MARKDOWN)
+        # print(order)
+        # await bot.send_message(id_user, emojize(f'Заказ отменен:cross_mark:') + f'\nid заказа: {order[0]}\n'
+        #                        + italic(f'{order[2]} {order[3]} {order[4]} шт.'), parse_mode=ParseMode.MARKDOWN)
         # await change_state_order(id_order)
 
 
